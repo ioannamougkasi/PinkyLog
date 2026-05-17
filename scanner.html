@@ -9,7 +9,6 @@
 <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared/auth.js"></script>
-<script src="shared/offline-sync.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -503,7 +502,7 @@
     vertical-align: middle;
   }
 </style>
-  <script src="shared/toast.js"></script>
+
 </head>
 <body>
 
@@ -735,7 +734,15 @@
     '05: Διάφορες Εργασίες',
     '06: Εργασίες Εγκαταστάσεων'
   ];
-
+function showToast(msg, color) {
+	const t = document.getElementById('toast');
+	if (!t) return;
+	t.textContent = msg;
+	t.style.background = color || '#1fa644';
+	t.classList.add('show');
+	clearTimeout(t._t);
+	t._t = setTimeout(() => t.classList.remove('show'), 2800); }
+	
   // ── STATE ──
   let workerDB     = [];
   let todayLog     = [];
@@ -774,8 +781,7 @@
     } else {
       showSiteModal();
     }
-	  // Ανανέωση του δείκτη συγχρονισμού (πόσες offline εγγραφές υπάρχουν)
-  OfflineSync.updateSyncIndicator();
+
   }
 
   // ── SITES ──
@@ -894,20 +900,12 @@ async function saveCheckin(workerId, fasi, timeIn, dateStr) {
     log_date:  dateStr
   };
 
-  // Offline fallback
-  if (!navigator.onLine) {
-    await OfflineSync.addToQueue('attendance_log', payload);
-    return 'offline-' + Date.now();
-  }
+
 
   // Online
   const { data, error } = await db.from('attendance_log').insert(payload).select('id').single();
   if (error) {
-    // Αν αποτύχει για δικτυακό λόγο, σώσε τοπικά
-    if (!navigator.onLine || error.message?.includes('fetch')) {
-      await OfflineSync.addToQueue('attendance_log', payload);
-      return 'offline-' + Date.now();
-    }
+
     showToast('⚠ Σφάλμα αποθήκευσης', '#e8600a');
     return null;
   }
