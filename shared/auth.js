@@ -9,8 +9,8 @@
   'use strict';
 
   // ── CREDENTIALS ─────────────────────────────────────────────────────────────
-  const SUPABASE_URL = 'https://ikmwxsfaopjkgajebyyf.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_mob3KRMf905pSPlm-ASBwQ_Fzh5X3Ax';
+  const SUPABASE_URL = 'https://namvsztkcvbfyeekdnqc.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_cXBdiWJhLvjv22hgoBJIyw_fKiSmSXF';
 
   // ── SUPABASE CLIENT ──────────────────────────────────────────────────────────
   // Εκτίθεται ως window.sb για χρήση από όλα τα HTML αρχεία
