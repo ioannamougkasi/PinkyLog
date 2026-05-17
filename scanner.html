@@ -1327,30 +1327,10 @@ async function saveCheckin(workerId, fasi, timeIn, dateStr) {
       // Το adhoc_worker_id θα μπει μετά τη δημιουργία
     };
 
-    const compoundPayload = {
-      type: 'adhoc_checkin',
-      adhocData,
-      logData
-    };
-
-    // Offline fallback
-    if (!navigator.onLine) {
-      await OfflineSync.addCompound(compoundPayload);
-      addLocalAdhocEntry(eponimo, onoma, eidikotita, ergolabos, fasi, timeIn, dateStr, ama, amka);
-      finishAdhocSubmit();
-      return;
-    }
-
     // Online: εκτέλεση της σύνθετης ενέργειας
     const adhocId = await getNextAdhocId();
     const { error: adhocErr } = await db.from('adhoc_workers').insert({ id: adhocId, ...adhocData });
     if (adhocErr) {
-      if (!navigator.onLine || adhocErr.message?.toLowerCase().includes('fetch')) {
-        await OfflineSync.addCompound(compoundPayload);
-        addLocalAdhocEntry(eponimo, onoma, eidikotita, ergolabos, fasi, timeIn, dateStr, ama, amka);
-        finishAdhocSubmit();
-        return;
-      }
       showToast('⚠ Σφάλμα: ' + adhocErr.message, '#e8600a');
       btn.disabled = false; btn.textContent = '⚡ Καταχώρηση & Check-in';
       return;
@@ -1358,20 +1338,7 @@ async function saveCheckin(workerId, fasi, timeIn, dateStr) {
 
     const { error: logErr } = await db.from('attendance_log').insert({ adhoc_worker_id: adhocId, ...logData });
     if (logErr) {
-      if (!navigator.onLine || logErr.message?.toLowerCase().includes('fetch')) {
-        // Ο adhoc worker δημιουργήθηκε, μόνο το log λείπει → βάλτο στο queue μόνο του
-        await OfflineSync.addToQueue('attendance_log', { adhoc_worker_id: adhocId, ...logData });
-        // προσθήκη τοπικής εγγραφής με το adhocId που πήραμε
-        todayLog.push({
-          id: adhocId, eponimo, onoma, eidikotita, ergolabos,
-          fasi, timeIn, date: dateStr, db_id: null, ama, amka,
-          isAdhoc: true, adhocStatus: 'pending'
-        });
-        renderLog();
-        finishAdhocSubmit();
-        return;
-      }
-      showToast('⚠ Check-in απέτυχε', '#e8600a');
+      showToast('⚠ Check-in απέτυχε: ' + logErr.message, '#e8600a');
       btn.disabled = false; btn.textContent = '⚡ Καταχώρηση & Check-in';
       return;
     }
@@ -1408,7 +1375,6 @@ function finishAdhocSubmit() {
   const btn = document.getElementById('adhocSubmitBtn');
   btn.disabled = false;
   btn.textContent = '⚡ Καταχώρηση & Check-in';
-  OfflineSync.updateSyncIndicator();
   if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
 }
 
